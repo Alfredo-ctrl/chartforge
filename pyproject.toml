@@ -5,15 +5,25 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "chartforge"
 version = "0.1.0"
-description = "Charts built for AI agents. CLI, Python API and MCP server."
+description = "Charts from a spec dict or a CSV file, as PNG or SVG."
 readme = "README.md"
 license = {text = "MIT"}
 authors = [{name = "Alfredo Ramos"}]
 requires-python = ">=3.10"
+keywords = ["charts", "matplotlib", "cli", "mcp"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Topic :: Utilities",
+]
 dependencies = [
     "matplotlib>=3.6",
     "Pillow>=10",
 ]
+
+[project.urls]
+Homepage = "https://github.com/Alfredo-ctrl/chartforge"
+Repository = "https://github.com/Alfredo-ctrl/chartforge"
 
 [project.scripts]
 chartforge = "chartforge.cli:main"

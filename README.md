@@ -1,8 +1,8 @@
 # chartforge
 
-Charts for AI agents. No GUI, no account, no vendor lock-in: a CLI, a Python API and an MCP server that any agent can drive — Muse, Antigravity, Codex, Claude Code, or a local model.
+Draw charts from a spec dict or a CSV file, and save them as PNG or SVG.
 
-It draws charts with matplotlib and saves PNG or SVG, so install the package and you are set.
+It draws charts with matplotlib.
 
 ## Install
 
@@ -55,6 +55,7 @@ chartforge create -o sales.png --csv sales.csv --type bar --x month --y store_a 
 | `scatter` | `x`, `series` |
 | `area` | `x`, `series` |
 | `pie` | `labels`, `values` |
+| `donut` | `labels`, `values` |
 | `histogram` | `values`, optional `bins` (default 10) |
 
 Themes: `light`, `dark`, `blue`.
@@ -85,8 +86,22 @@ describe("sales.png")  # format, size, dimensions
 
 ## MCP server
 
+Any MCP client can use chartforge as tools:
+
 ```sh
 chartforge mcp
 ```
 
-Tools: `create_chart`, `create_chart_from_csv`, `describe_chart`, `list_themes`, `list_chart_types`.
+It speaks MCP over stdio and exposes `create_chart`, `create_chart_from_csv`, `describe_chart`, `list_themes`, `list_chart_types`. Example client config:
+
+```json
+{
+  "mcpServers": {
+    "chartforge": {"command": "chartforge", "args": ["mcp"]}
+  }
+}
+```
+
+## License
+
+See [LICENSE](LICENSE).

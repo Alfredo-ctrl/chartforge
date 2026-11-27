@@ -116,6 +116,11 @@ class TestChartforge(unittest.TestCase):
         chart_from_csv(self.csv, "pie", "month", ["store_a"], self.out("csv_pie.svg"))
         self._check_file(self.out("csv_pie.svg"))
 
+    def test_csv_donut(self):
+        result = chart_from_csv(self.csv, "donut", "month", ["store_a"], self.out("csv_donut.png"))
+        self.assertEqual(result["type"], "donut")
+        self._check_file(self.out("csv_donut.png"))
+
     def test_csv_missing_column(self):
         with self.assertRaises(ValueError):
             chart_from_csv(self.csv, "line", "nope", ["store_a"], self.out("bad.png"))

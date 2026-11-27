@@ -16,7 +16,7 @@ THEMES = {
     "blue": {"bg": "#eff6ff", "fg": "#1e3a8a", "grid": "#bfdbfe", "palette": ["#1d4ed8", "#0ea5e9", "#6366f1", "#2563eb", "#3b82f6", "#06b6d4"]},
 }
 
-TYPES = ["line", "bar", "barh", "scatter", "pie", "histogram", "area"]
+TYPES = ["line", "bar", "barh", "scatter", "pie", "donut", "histogram", "area"]
 
 FORMATS = ["png", "svg"]
 
@@ -32,6 +32,7 @@ def list_types():
         "barh": "Horizontal bars. Needs x plus one or more series.",
         "scatter": "Dots. Needs x plus one or more series.",
         "pie": "Slices. Needs labels plus one values list.",
+        "donut": "Pie with a hole in the middle. Needs labels plus one values list.",
         "histogram": "Distribution of one values list. Optional bins.",
         "area": "Filled lines over x. Needs x plus one or more series.",
     }
@@ -64,7 +65,7 @@ def _check_spec(spec):
     title = spec.get("title")
     if title is not None and not isinstance(title, str):
         raise ValueError("'title' has to be text")
-    if kind == "pie":
+    if kind in ("pie", "donut"):
         labels = _labels("labels", spec.get("labels"))
         values = _numbers("values", spec.get("values"))
         if len(labels) != len(values):
@@ -109,6 +110,16 @@ def _style_ax(ax, theme, spec):
 
 def _draw(ax, kind, theme, data):
     colors = THEMES[theme]["palette"]
+    if kind == "donut":
+        wedges, _, autotexts = ax.pie(
+            data["values"], labels=data["labels"], autopct="%1.1f%%",
+            colors=colors, textprops={"color": THEMES[theme]["fg"]},
+            wedgeprops={"width": 0.4},
+        )
+        for txt in autotexts:
+            txt.set_color(THEMES[theme]["fg"])
+        ax.set_aspect("equal")
+        return
     if kind == "pie":
         wedges, _, autotexts = ax.pie(
             data["values"], labels=data["labels"], autopct="%1.1f%%",

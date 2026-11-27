@@ -41,7 +41,7 @@ class TestChartforge(unittest.TestCase):
 
     def test_types(self):
         types = list_types()
-        self.assertEqual(set(types), {"line", "bar", "barh", "scatter", "pie", "histogram", "area"})
+        self.assertEqual(set(types), {"line", "bar", "barh", "scatter", "pie", "donut", "histogram", "area"})
 
     def test_line_png(self):
         result = build_chart({"type": "line", "title": "Sales", "x": X, "series": SERIES}, self.out("line.png"))
@@ -72,6 +72,11 @@ class TestChartforge(unittest.TestCase):
         result = build_chart({"type": "pie", "labels": X, "values": [12, 19, 8, 15]}, self.out("pie.png"))
         self.assertEqual(result["type"], "pie")
         self._check_file(self.out("pie.png"))
+
+    def test_donut(self):
+        result = build_chart({"type": "donut", "labels": X, "values": [12, 19, 8, 15]}, self.out("donut.png"))
+        self.assertEqual(result["type"], "donut")
+        self._check_file(self.out("donut.png"))
 
     def test_histogram(self):
         build_chart({"type": "histogram", "values": [1, 2, 2, 3, 3, 3, 4, 5], "bins": 5}, self.out("hist.png"))

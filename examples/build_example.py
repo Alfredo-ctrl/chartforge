@@ -22,6 +22,8 @@ for kind in ("line", "bar", "barh", "scatter", "area"):
 
 print(build_chart({"type": "pie", "title": "Share", "labels": X, "values": [12, 19, 8, 15]},
                   os.path.join(OUT, "pie.svg")))
+print(build_chart({"type": "donut", "title": "Share", "labels": X, "values": [12, 19, 8, 15]},
+                  os.path.join(OUT, "donut.png")))
 print(build_chart({"type": "histogram", "title": "Scores", "values": [1, 2, 2, 3, 3, 3, 4, 5]},
                   os.path.join(OUT, "histogram.png")))
 

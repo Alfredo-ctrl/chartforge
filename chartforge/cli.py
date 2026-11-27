@@ -1,4 +1,4 @@
-"""chartforge command line. Built for agents: JSON in, JSON out."""
+"""chartforge command line. JSON in, JSON out."""
 
 import argparse
 import json
@@ -7,12 +7,12 @@ import sys
 from . import __version__, build_chart, chart_from_csv, describe, list_themes, list_types, spec_from_json
 
 
-def _fail(msg):
+def _exit_error(msg):
     print(json.dumps({"error": msg}), file=sys.stderr)
     raise SystemExit(1)
 
 
-def _ok(payload):
+def _print_result(payload):
     print(json.dumps(payload))
 
 
@@ -27,24 +27,24 @@ def cmd_create(args):
             spec = spec_from_json(args.structure)
             result = build_chart(spec, args.output, theme=args.theme)
     except (ValueError, FileNotFoundError, OSError) as e:
-        _fail(str(e))
-    _ok(result)
+        _exit_error(str(e))
+    _print_result(result)
 
 
 def cmd_describe(args):
     try:
         result = describe(args.input)
     except ValueError as e:
-        _fail(str(e))
-    _ok(result)
+        _exit_error(str(e))
+    _print_result(result)
 
 
 def cmd_themes(args):
-    _ok(list_themes())
+    _print_result(list_themes())
 
 
 def cmd_types(args):
-    _ok(list_types())
+    _print_result(list_types())
 
 
 def cmd_mcp(args):
@@ -54,7 +54,7 @@ def cmd_mcp(args):
 
 
 def main(argv=None):
-    parser = argparse.ArgumentParser(prog="chartforge", description="Charts for AI agents.")
+    parser = argparse.ArgumentParser(prog="chartforge", description="Draw charts from a spec dict or a CSV file.")
     parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     sub = parser.add_subparsers(dest="command", required=True)
 

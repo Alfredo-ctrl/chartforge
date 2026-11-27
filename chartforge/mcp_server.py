@@ -1,4 +1,4 @@
-"""Minimal MCP server over stdio. No dependencies, plain JSON-RPC.
+"""MCP server over stdio. Hand-rolled JSON-RPC, no MCP SDK.
 
 Tools: create_chart, create_chart_from_csv, describe_chart, list_themes, list_chart_types.
 """
@@ -8,10 +8,12 @@ import sys
 
 from . import __version__, build_chart, chart_from_csv, describe, list_themes, list_types
 
+_CHART_TYPES = ", ".join(list_types())
+
 TOOLS = [
     {
         "name": "create_chart",
-        "description": "Build a PNG or SVG chart from a spec dict: type (line, bar, barh, scatter, pie, histogram, area), optional title/xlabel/ylabel/theme, x labels plus series of values, or labels+values for pie, values+bins for histogram.",
+        "description": f"Build a PNG or SVG chart from a spec dict: type ({_CHART_TYPES}), optional title/xlabel/ylabel/theme, x labels plus series of values, or labels+values for pie and donut, values+bins for histogram.",
         "inputSchema": {
             "type": "object",
             "properties": {
@@ -29,7 +31,7 @@ TOOLS = [
             "type": "object",
             "properties": {
                 "path": {"type": "string", "description": "CSV file path"},
-                "type": {"type": "string", "description": "Chart type: line, bar, barh, scatter, pie, histogram, area"},
+                "type": {"type": "string", "description": f"Chart type: {_CHART_TYPES}"},
                 "x_column": {"type": "string", "description": "CSV column for the x axis"},
                 "y_columns": {"type": "array", "items": {"type": "string"}, "description": "CSV column(s) for the y values"},
                 "output": {"type": "string", "description": "Output .png or .svg path"},
@@ -61,21 +63,21 @@ TOOLS = [
 ]
 
 
-def _text(payload):
+def _text_result(payload):
     return {"content": [{"type": "text", "text": json.dumps(payload)}]}
 
 
-def _call(name, args):
+def _dispatch_tool(name, args):
     if name == "list_themes":
-        return _text(list_themes())
+        return _text_result(list_themes())
     if name == "list_chart_types":
-        return _text(list_types())
+        return _text_result(list_types())
     if name == "describe_chart":
-        return _text(describe(args["input"]))
+        return _text_result(describe(args["input"]))
     if name == "create_chart":
-        return _text(build_chart(args["spec"], args["output"], args.get("theme")))
+        return _text_result(build_chart(args["spec"], args["output"], args.get("theme")))
     if name == "create_chart_from_csv":
-        return _text(chart_from_csv(
+        return _text_result(chart_from_csv(
             args["path"], args["type"], args["x_column"], args["y_columns"],
             args["output"], args.get("theme", "light"), args.get("title"),
         ))
@@ -108,7 +110,7 @@ def run():
             resp = {"result": {"tools": TOOLS}}
         elif method == "tools/call":
             try:
-                resp = {"result": _call(req["params"]["name"], req["params"].get("arguments", {}))}
+                resp = {"result": _dispatch_tool(req["params"]["name"], req["params"].get("arguments", {}))}
             except Exception as e:
                 resp = {"result": {"content": [{"type": "text", "text": json.dumps({"error": str(e)})}], "isError": True}}
         else:

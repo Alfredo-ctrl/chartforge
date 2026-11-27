@@ -4,12 +4,14 @@ import csv
 import io
 import json
 import os
+import xml.etree.ElementTree as ET
 
 import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 
+# Colors from Tailwind's default palette.
 THEMES = {
     "light": {"bg": "white", "fg": "#1f2937", "grid": "#d1d5db", "palette": ["#2563eb", "#dc2626", "#16a34a", "#d97706", "#7c3aed", "#0891b2"]},
     "dark": {"bg": "#111827", "fg": "#f9fafb", "grid": "#374151", "palette": ["#60a5fa", "#f87171", "#4ade80", "#fbbf24", "#a78bfa", "#22d3ee"]},
@@ -17,6 +19,8 @@ THEMES = {
 }
 
 TYPES = ["line", "bar", "barh", "scatter", "pie", "donut", "histogram", "area"]
+
+FIGSIZE = (10, 6)
 
 FORMATS = ["png", "svg"]
 
@@ -32,7 +36,7 @@ def list_types():
         "barh": "Horizontal bars. Needs x plus one or more series.",
         "scatter": "Dots. Needs x plus one or more series.",
         "pie": "Slices. Needs labels plus one values list.",
-        "donut": "Pie with a hole in the middle. Needs labels plus one values list.",
+        "donut": "Pie chart with a hollow centre. Needs labels plus one values list.",
         "histogram": "Distribution of one values list. Optional bins.",
         "area": "Filled lines over x. Needs x plus one or more series.",
     }
@@ -110,20 +114,11 @@ def _style_ax(ax, theme, spec):
 
 def _draw(ax, kind, theme, data):
     colors = THEMES[theme]["palette"]
-    if kind == "donut":
+    if kind in ("pie", "donut"):
         wedges, _, autotexts = ax.pie(
             data["values"], labels=data["labels"], autopct="%1.1f%%",
             colors=colors, textprops={"color": THEMES[theme]["fg"]},
-            wedgeprops={"width": 0.4},
-        )
-        for txt in autotexts:
-            txt.set_color(THEMES[theme]["fg"])
-        ax.set_aspect("equal")
-        return
-    if kind == "pie":
-        wedges, _, autotexts = ax.pie(
-            data["values"], labels=data["labels"], autopct="%1.1f%%",
-            colors=colors, textprops={"color": THEMES[theme]["fg"]},
+            wedgeprops={"width": 0.4} if kind == "donut" else {},
         )
         for txt in autotexts:
             txt.set_color(THEMES[theme]["fg"])
@@ -156,11 +151,20 @@ def _draw(ax, kind, theme, data):
     else:  # line
         for i, s in enumerate(data["series"]):
             ax.plot(list(xs), s["values"], color=colors[i % len(colors)], marker="o", label=s["label"] or None)
-    if kind not in ("barh",):
+    if kind != "barh":
         ax.set_xticks(list(xs))
         ax.set_xticklabels(x)
     if len(data["series"]) > 1 or any(s["label"] for s in data["series"]):
         ax.legend()
+
+
+def _svg_size(value):
+    if not value:
+        return None
+    try:
+        return float(value.strip().rstrip("ptpx"))
+    except ValueError:
+        return None
 
 
 def build_chart(spec, output, theme=None):
@@ -172,7 +176,7 @@ def build_chart(spec, output, theme=None):
     fmt = os.path.splitext(output)[1].lower().lstrip(".")
     if fmt not in FORMATS:
         raise ValueError(f"output has to end in .png or .svg, got '{output}'")
-    fig, ax = plt.subplots(figsize=(10, 6))
+    fig, ax = plt.subplots(figsize=FIGSIZE)
     fig.patch.set_facecolor(THEMES[theme]["bg"])
     _draw(ax, kind, theme, data)
     _style_ax(ax, theme, spec)
@@ -205,7 +209,7 @@ def chart_from_csv(path, kind, x_column, y_columns, output, theme="light", title
         if col not in rows[0]:
             raise ValueError(f"column '{col}' is not in '{path}'")
     spec = {"type": kind, "title": title, "xlabel": xlabel or x_column, "ylabel": ylabel, "theme": theme}
-    if kind == "pie":
+    if kind in ("pie", "donut"):
         spec["labels"] = [r[x_column] for r in rows]
         spec["values"] = _numbers(y_columns[0], [r[y_columns[0]] for r in rows])
     elif kind == "histogram":
@@ -230,15 +234,18 @@ def describe(path):
         with Image.open(path) as img:
             info.update({"format": "png", "width": img.width, "height": img.height})
     elif ext == ".svg":
-        with open(path, encoding="utf-8") as f:
-            head = f.read(4096)
         info["format"] = "svg"
-        import re
-
-        m = re.search(r'width="([\d.]+)(pt|px)?"\s+height="([\d.]+)', head)
-        if m:
-            info["width"] = float(m.group(1))
-            info["height"] = float(m.group(3))
+        try:
+            root = ET.parse(path).getroot()
+        except ET.ParseError:
+            root = None
+        if root is not None:
+            width = _svg_size(root.get("width"))
+            height = _svg_size(root.get("height"))
+            if width is not None:
+                info["width"] = width
+            if height is not None:
+                info["height"] = height
     else:
         raise ValueError(f"describe only works on .png or .svg, got '{path}'")
     return info

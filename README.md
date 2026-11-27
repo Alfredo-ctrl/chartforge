@@ -7,7 +7,7 @@ It draws charts with matplotlib and saves PNG or SVG, so install the package and
 ## Install
 
 ```sh
-pip install chartforge
+pip install git+https://github.com/Alfredo-ctrl/chartforge.git
 ```
 
 ## Use it from the terminal
